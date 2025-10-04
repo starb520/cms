@@ -1,0 +1,13 @@
+<a href="#" class="list-group-item clearfix" (click)="onSelected()" >
+  <div class="pull-left">
+    <p class="list-group-item-text" style="font-size: 25px">{{ contact.name }}</p>
+  </div>
+  <span class="pull-right">
+    <img
+      [src]="contact.imageUrl"
+      alt="{{ contact.name }}"
+      class="img-responsive"
+      style="max-height: 100px"
+    />
+  </span>
+</a>

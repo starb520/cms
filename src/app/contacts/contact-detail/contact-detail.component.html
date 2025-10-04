@@ -3,7 +3,7 @@
     <div class="pull-left">
       <div class="media-left">
         <img
-          [src]=""
+          [src]="contact?.imageUrl "
           [alt]=""
           class=""
           style="height: 120px;  object-fit: cover"
@@ -23,8 +23,8 @@
   <div class="panel-body">
     <div class="media">
       <div class="media-body">
-        <p><strong>Email:</strong></p>
-        <p><strong>Phone:</strong></p>
+        <p><strong>Email: </strong>{{ contact?.email }}  </p>
+        <p><strong>Phone:</strong>{{contact?.phone }}</p>
       </div>
     </div>
   </div>
