@@ -15,12 +15,12 @@ export class DocumentsComponent {
   constructor(private documentService: DocumentService) {}
   
   ngOnInit() {
-    this.documentService.selectedDocumentEvent
-      .subscribe(
-        (document: Document) => {
-          this.selectedDocument = document;
-        }
-      );
+    // this.documentService.selectedDocumentEvent
+    //   .subscribe(
+    //     (document: Document) => {
+    //       this.selectedDocument = document;
+    //     }
+    //   );
   }
 
 }
