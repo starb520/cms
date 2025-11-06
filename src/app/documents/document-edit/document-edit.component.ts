@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { NgForm } from '@angular/forms';
 
 import { Document } from '../document.model';
-import { NgForm } from '@angular/forms';
 import { DocumentService } from '../document.service';
 @Component({
   selector: 'cms-document-edit',
