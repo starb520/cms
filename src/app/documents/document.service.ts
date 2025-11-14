@@ -27,6 +27,8 @@ export class DocumentService {
         next: (documents: Document[]) => {
           this.documents = documents || [];
 
+          //  console.log("🔥 Documents received from Firebase:", this.documents);
+
           this.documents.sort((a, b) => {
             if (a.name < b.name) return -1;
             if (a.name > b.name) return 1;

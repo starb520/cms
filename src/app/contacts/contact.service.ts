@@ -1,5 +1,6 @@
 import { Injectable, EventEmitter } from '@angular/core';
 import { Subject } from 'rxjs';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 
 import { Contact } from './contact.model';
 import { MOCKCONTACTS } from './MOCKCONTACTS';
@@ -14,24 +15,68 @@ export class ContactService {
   contactListChangedEvent = new Subject<Contact[]>();
   maxContactId: number;
 
-  constructor() {
+  constructor(private http: HttpClient) {
     // Initialize contacts with mock data
     this.contacts = MOCKCONTACTS;
+    this.maxContactId = this.getMaxId();
   }
 
-  getContacts(): Contact[] {
-    return this.contacts.slice();
+  getContacts() {
+    this.http
+      .get<Contact[]>('https://wdd430-cms-cc424-default-rtdb.firebaseio.com/contacts.json')
+      .subscribe({
+        next: (contacts: Contact[]) => {
+          this.contacts = contacts || [];
+
+          //  console.log("🔥 Contacts received from Firebase:", this.contacts);
+
+          this.contacts.sort((a, b) => {
+            if (a.name < b.name) return -1;
+            if (a.name > b.name) return 1;
+            return 0;
+          });
+
+          this.maxContactId = this.getMaxId();
+          this.contactListChangedEvent.next(this.contacts.slice());
+        },
+
+        error: (error: any) => {
+          console.error('Error fetching contacts:', error);
+        },
+      });
   }
+
+  // getContacts(): Contact[] {
+  //   return this.contacts.slice();
+  // }
 
   getContact(id: string): Contact | null {
-    return this.contacts.find(c => c.id === id) || null;
+    return this.contacts.find((c) => c.id === id) || null;
+  }
+
+  storeContacts() {
+    const contactsString = JSON.stringify(this.contacts);
+    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+    this.http
+      .put('https://wdd430-cms-cc424-default-rtdb.firebaseio.com/contacts.json', contactsString, {
+        headers: headers,
+      })
+      .subscribe({
+        next: () => {
+          // console.log('Contacts successfully stored to Firebase.');
+          this.contactListChangedEvent.next(this.contacts.slice());
+        },
+        error: (error: any) => {
+          console.error('Error storing contacts:', error);
+        },
+      });
   }
 
   // find the highest id number in the contacts list so when
   // adding additional contacts we know where to start
   getMaxId(): number {
     let maxId = 0;
-    this.contacts.forEach(contact => {
+    this.contacts.forEach((contact) => {
       const currentId = parseInt(contact.id, 10);
       if (currentId > maxId) {
         maxId = currentId;
@@ -48,21 +93,21 @@ export class ContactService {
     this.maxContactId++;
     newContact.id = this.maxContactId.toString();
     this.contacts.push(newContact);
-    this.contactListChangedEvent.next(this.contacts.slice()); // passes a clone of the array to the subscribers
+    this.storeContacts();
   }
 
   // update existing contact in contacts list
   updateContact(originalContact: Contact, newContact: Contact) {
-    if (!originalContact || !newContact) {  
+    if (!originalContact || !newContact) {
       return;
-    } 
+    }
     const position = this.contacts.indexOf(originalContact);
     if (position < 0) {
       return;
     }
     newContact.id = originalContact.id;
     this.contacts[position] = newContact;
-    this.contactListChangedEvent.next(this.contacts.slice());
+    this.storeContacts();
   }
 
   // delete contact from the contacts list
@@ -76,6 +121,6 @@ export class ContactService {
       return;
     }
     this.contacts.splice(position, 1);
-    this.contactListChangedEvent.next(this.contacts.slice());;
+    this.storeContacts();
   }
 }
