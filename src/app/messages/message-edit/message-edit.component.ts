@@ -1,4 +1,6 @@
 import { Component, ViewChild, ElementRef, Output, EventEmitter, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+
 import { Message } from '../message.model'; 
 import { MessageService } from '../message.service';
 
