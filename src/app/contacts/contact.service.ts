@@ -22,28 +22,26 @@ export class ContactService {
   }
 
   getContacts() {
-    this.http
-      .get<Contact[]>('https://wdd430-cms-cc424-default-rtdb.firebaseio.com/contacts.json')
-      .subscribe({
-        next: (contacts: Contact[]) => {
-          this.contacts = contacts || [];
+    this.http.get<Contact[]>('http://localhost:3000/contacts').subscribe({
+      next: (contacts: Contact[]) => {
+        this.contacts = contacts || [];
 
-          //  console.log("🔥 Contacts received from Firebase:", this.contacts);
+        //  console.log("🔥 Contacts received from Firebase:", this.contacts);
 
-          this.contacts.sort((a, b) => {
-            if (a.name < b.name) return -1;
-            if (a.name > b.name) return 1;
-            return 0;
-          });
+        this.contacts.sort((a, b) => {
+          if (a.name < b.name) return -1;
+          if (a.name > b.name) return 1;
+          return 0;
+        });
 
-          this.maxContactId = this.getMaxId();
-          this.contactListChangedEvent.next(this.contacts.slice());
-        },
+        this.maxContactId = this.getMaxId();
+        this.contactListChangedEvent.next(this.contacts.slice());
+      },
 
-        error: (error: any) => {
-          console.error('Error fetching contacts:', error);
-        },
-      });
+      error: (error: any) => {
+        console.error('Error fetching contacts:', error);
+      },
+    });
   }
 
   // getContacts(): Contact[] {
@@ -86,14 +84,59 @@ export class ContactService {
   }
 
   // add new contact to contacts list
+  // addContact(newContact: Contact) {
+  //   if (!newContact) {
+  //     return;
+  //   }
+  //   this.maxContactId++;
+  //   newContact.id = this.maxContactId.toString();
+  //   this.contacts.push(newContact);
+  //   this.storeContacts();
+  // }
+
+  // // update existing contact in contacts list
+  // updateContact(originalContact: Contact, newContact: Contact) {
+  //   if (!originalContact || !newContact) {
+  //     return;
+  //   }
+  //   const position = this.contacts.indexOf(originalContact);
+  //   if (position < 0) {
+  //     return;
+  //   }
+  //   newContact.id = originalContact.id;
+  //   this.contacts[position] = newContact;
+  //   this.storeContacts();
+  // }
+
+  // add new contact to contacts list
   addContact(newContact: Contact) {
     if (!newContact) {
       return;
     }
-    this.maxContactId++;
-    newContact.id = this.maxContactId.toString();
-    this.contacts.push(newContact);
-    this.storeContacts();
+    // Let backend assign ID
+    newContact.id = '';
+    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+    this.http
+      .post<{ message: string; contact: Contact }>('http://localhost:3000/contacts', newContact, {
+        headers: headers,
+      })
+      .subscribe({
+        next: (responseData) => {
+          this.contacts.push(responseData.contact);
+
+          // sort list
+          this.contacts.sort((a, b) => {
+            if (a.name < b.name) return -1;
+            if (a.name > b.name) return 1;
+            return 0;
+          });
+
+          this.contactListChangedEvent.next(this.contacts.slice());
+        },
+        error: (err) => {
+          console.error('Error adding contact:', err);
+        },
+      });
   }
 
   // update existing contact in contacts list
@@ -101,26 +144,77 @@ export class ContactService {
     if (!originalContact || !newContact) {
       return;
     }
-    const position = this.contacts.indexOf(originalContact);
-    if (position < 0) {
+    const pos = this.contacts.findIndex((c) => c.id === originalContact.id);
+    if (pos < 0) {
       return;
     }
+    // Keep IDs consistent
     newContact.id = originalContact.id;
-    this.contacts[position] = newContact;
-    this.storeContacts();
+    (newContact as any)._id = (originalContact as any)._id;
+    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+    this.http
+      .put('http://localhost:3000/contacts/' + originalContact.id, newContact, { headers: headers })
+      .subscribe({
+        next: () => {
+          this.contacts[pos] = newContact;
+
+          this.contacts.sort((a, b) => {
+            if (a.name < b.name) return -1;
+            if (a.name > b.name) return 1;
+            return 0;
+          });
+          this.contactListChangedEvent.next(this.contacts.slice());
+        },
+        error: (error) => {
+          console.error('Error updating contact:', error);
+        },
+      });
   }
 
   // delete contact from the contacts list
-  deleteContact(contact: Contact) {
-    if (!contact) {
-      return;
-    }
-    const position = this.contacts.indexOf(contact);
+  // deleteContact(contact: Contact) {
+  //   if (!contact) {
+  //     return;
+  //   }
+  //   const position = this.contacts.indexOf(contact);
 
-    if (position < 0) {
-      return;
-    }
-    this.contacts.splice(position, 1);
-    this.storeContacts();
+  //   if (position < 0) {
+  //     return;
+  //   }
+  //   this.contacts.splice(position, 1);
+  //   this.storeContacts();
+  // }
+
+  // delete contact from the contacts list
+  deleteContact(contact: Contact) {
+  if (!contact) {
+    return;
   }
+
+  const pos = this.contacts.findIndex(c => c.id === contact.id);
+
+  if (pos < 0) {
+    return;
+  }
+
+  this.http.delete('http://localhost:3000/contacts/' + contact.id)
+    .subscribe({
+      next: () => {
+        this.contacts.splice(pos, 1);
+
+        this.contacts.sort((a, b) => {
+          if (a.name < b.name) return -1;
+          if (a.name > b.name) return 1;
+          return 0;
+        });
+
+        this.contactListChangedEvent.next(this.contacts.slice());
+      },
+
+      error: (error) => {
+        console.error('Error deleting contact:', error);
+      }
+    });
+}
+
 }
